@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Pile : MonoBehaviour
 {
-    public int pileNumber = 0;
+    public string pileNumber = "";
     public Vector2 spaceBetweenCards = new Vector2(0.3f, 0.01f); //x for z space & y for y space
     Vector3 pileStartPosition;
     List<Card> cardList;
@@ -12,7 +12,6 @@ public class Pile : MonoBehaviour
     int cardIndexToFollow;
     //vars for Foundations
     public bool isFoundation = false;
-    public CardType foundationType;
 
     void Start()
     {
@@ -31,18 +30,18 @@ public class Pile : MonoBehaviour
                 ((cardList.Count == 0 && card.number == 13) || //you start with a king
                 (cardList.Count != 0 && cardList[cardList.Count - 1].number == card.number + 1 && //the number is appropriate
                 (Mathf.Abs(card.type - cardList[cardList.Count - 1].type) != 2 && card.type != cardList[cardList.Count - 1].type)))) //the color is appropriate
-                card.CardWelcome(true, this);
-            else card.CardWelcome(false);
+                card.SetNewPile(true, this);
+            else card.SetNewPile(false);
         }
         else
         {
             if (!cardList.Contains(card) && //if it's a new card
                 (card.inStock || card.currentPile.IsLastCard(card)) &&
                 ((cardList.Count == 0 && card.number == 1) || //you start with an Ace
-                (cardList.Count != 0 && cardList[cardList.Count - 1].number == card.number - 1) && //the number is appropriate
-                card.type == foundationType)) //the type is appropriate
-                card.CardWelcome(true, this);
-            else card.CardWelcome(false);
+                ((cardList.Count != 0 && cardList[cardList.Count - 1].number == card.number - 1) && //the number is appropriate
+                card.type == cardList[0].type))) //the type is appropriate
+                card.SetNewPile(true, this);
+            else card.SetNewPile(false);
         }
     }
 
@@ -50,20 +49,22 @@ public class Pile : MonoBehaviour
     {
         Card card = other.GetComponent<Card>();
         if (!card.beingDragged) return;
-        card.CardWelcome(false);
+        card.SetNewPile(false);
     }
 
     public void MoveCardToPile(Card card, Pile newPile, bool moveStack = false)
     {
+        string move = pileNumber + " " + newPile.pileNumber + " " + GetStackLength(card);
         cardList.Remove(card);
         newPile.AddCard(card);
         //move the stack to new pile
         if (moveStack)
+        {
             while (cardIndexToFollow < cardList.Count)
-            {
                 MoveCardToPile(cardList[cardIndexToFollow], newPile);
-            }
-        RevealLastCard();
+            if (RevealLastCard()) move += " F"; //last card flipped
+            if (card.beingDragged) GameManager.current.RegisterMove(move); //only register the move is made by the player
+        }
     }
 
     public void AddCard(Card card)
@@ -73,10 +74,19 @@ public class Pile : MonoBehaviour
         card.currentPile = this;
     }
 
-    public void RevealLastCard()
+    public bool RevealLastCard()
     {
         if (cardList.Count != 0 && !cardList[cardList.Count - 1].cardFacingUp)
-            cardList[cardList.Count - 1].RotateCard();
+        {
+            cardList[cardList.Count - 1].RevealHide(true);
+            return true;
+        }
+        return false;
+    }
+
+    public void HideLastCard()
+    {
+        cardList[cardList.Count - 1].RevealHide(false);
     }
 
     public void MoveStack(Card card)
@@ -111,5 +121,25 @@ public class Pile : MonoBehaviour
     {
         if (!isFoundation || cardList.IndexOf(card) == cardList.Count - 1) return true; //making sure the player can only take the card on the top
         return false;
+    }
+
+    public int GetStackLength(Card card)
+    {
+        return cardList.Count - cardList.IndexOf(card);
+    }
+
+    public void Undo(Pile pile, int numberOfCardsToReturn, bool hideLastCard)
+    {
+        cardIndexToFollow = cardList.Count - numberOfCardsToReturn;
+        if (hideLastCard) pile.HideLastCard();
+        MoveCardToPile(cardList[cardIndexToFollow], pile, true);        
+    }
+
+    public void ReturnCardToStock()
+    {
+        cardList[cardList.Count - 1].inStock = true;
+        cardList[cardList.Count - 1].RemovePileReferences();
+        cardList.RemoveAt(cardList.Count - 1);
+        GameManager.current.stock.RefreshAfterUndoFromPile();
     }
 }

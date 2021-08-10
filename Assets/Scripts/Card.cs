@@ -65,6 +65,7 @@ public class Card : MonoBehaviour
              !inStock && currentPile.CanCardMove(this)))
         {
             beingDragged = true;
+            SetNewPile(false);
             positionToTransfer = transform.position;
             transform.eulerAngles = Vector3.right * 90f;
             transform.position += Vector3.up * 1f;
@@ -74,12 +75,14 @@ public class Card : MonoBehaviour
         {
             if (!inStock && currentPile != newPile) //if moving to a new pile
             {
-                currentPile.MoveCardToPile(this, newPile, true);
+                currentPile.MoveCardToPile(this, newPile, true);                
             }
             else if (inStock && newPile != null) //if moving from stock to new pile
             {
+                GameManager.current.RegisterMove("S " + newPile.pileNumber);
                 inStock = false;
                 newPile.AddCard(this);
+                GameManager.current.stock.GoBack();
             }
             else //if the pile not changed return back
             {
@@ -118,16 +121,21 @@ public class Card : MonoBehaviour
         }
     }
 
-    public void RotateCard()
+    public void RevealHide(bool reveal)
     {
-        transform.eulerAngles = new Vector3(cardFacingUp?-90:90, Random.Range(-5, 5), 0);
-        cardFacingUp = !cardFacingUp;
+        transform.eulerAngles = new Vector3(reveal?90:-90, Random.Range(-5, 5), 0);
+        cardFacingUp = reveal;
     }
 
     //if the card entered it's original pile then the cardwelcome function will return it anyways
-    public void CardWelcome(bool welcome, Pile pile = null)
+    public void SetNewPile(bool cardWelcome, Pile pile = null)
     {
-        if (welcome) newPile = pile;
+        if (cardWelcome) newPile = pile;
         else newPile = currentPile;
+    }
+
+    public void RemovePileReferences()
+    {
+        newPile = currentPile = null;
     }
 }
