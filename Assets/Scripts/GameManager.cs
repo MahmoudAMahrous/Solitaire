@@ -11,14 +11,14 @@ public class GameManager : MonoBehaviour
     [Header("Cards Piles:")]
     public Pile[] piles;
     public Stock stock;
-
-    List<string> History;
+    public int playerScore = 0;
+    List<string> moveHistory;
 
     void Start()
     {
         if (current == null) current = this;
         else Destroy(gameObject);
-        History = new List<string>();
+        moveHistory = new List<string>();
         for (int i = 0; i < piles.Length; i++) piles[i].pileNumber = i.ToString();
         GenerateCards();
     }
@@ -65,23 +65,36 @@ public class GameManager : MonoBehaviour
         stock.cardList.AddRange(deck);
     }
 
-    public void RegisterMove(string move)
+    public void RegisterMove(string move, int score)
     {
+        move += " " + playerScore;
+        playerScore += score;
+        if (playerScore < 0) playerScore = 0;
         print(move);
-        History.Add(move);
+        moveHistory.Add(move);
     }
 
     public void Undo()
     {
-        if (History.Count == 0) return;
-        string[] move = History[History.Count - 1].Split(' ');
-        if (move[0] == "SM") stock.Undo(int.Parse(move[1]));
+        if (moveHistory.Count == 0) return;
+        string[] move = moveHistory[moveHistory.Count - 1].Split(' ');
+        int lastScore = 0;
+        if (move[0] == "SM")
+        {
+            stock.Undo(int.Parse(move[1]));
+            lastScore = int.Parse(move[2]);
+        }
         else if (move[0] == "S")
         {
             piles[int.Parse(move[1])].ReturnCardToStock();
+            lastScore = int.Parse(move[2]);
         }
         else
-            piles[int.Parse(move[1])].Undo(piles[int.Parse(move[0])], int.Parse(move[2]), move.Length == 4);
-        History.RemoveAt(History.Count - 1);
+        {
+            piles[int.Parse(move[1])].Undo(piles[int.Parse(move[0])], int.Parse(move[2]), move[3] == "F");
+            lastScore = int.Parse(move[4]);
+        }
+        playerScore = lastScore;
+        moveHistory.RemoveAt(moveHistory.Count - 1);
     }
 }

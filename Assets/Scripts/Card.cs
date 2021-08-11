@@ -75,14 +75,14 @@ public class Card : MonoBehaviour
         {
             if (!inStock && currentPile != newPile) //if moving to a new pile
             {
-                currentPile.MoveCardToPile(this, newPile, true);                
+                currentPile.MoveCardToPile(this, newPile, true);
             }
             else if (inStock && newPile != null) //if moving from stock to new pile
             {
-                GameManager.current.RegisterMove("S " + newPile.pileNumber);
                 inStock = false;
                 newPile.AddCard(this);
                 GameManager.current.stock.GoBack();
+                GameManager.current.RegisterMove("S " + newPile.pileNumber, newPile.isFoundation ? 10 : 5);
             }
             else //if the pile not changed return back
             {

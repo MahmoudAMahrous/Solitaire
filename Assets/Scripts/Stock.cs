@@ -35,8 +35,8 @@ public class Stock : MonoBehaviour
                 cardPointer = GetNextLast(1);
                 if (cardPointer == -2 && i == 0)
                 {
-                    ResetStock();
                     cardsShown = -1;
+                    ResetStock();
                     break;
                 }
                 else if (cardPointer != -2)
@@ -46,7 +46,7 @@ public class Stock : MonoBehaviour
                 }
             }
             move += cardsShown;
-            GameManager.current.RegisterMove(move);
+            GameManager.current.RegisterMove(move, cardsShown < 0 ? -100 : 0);
         }
     }
 
@@ -106,7 +106,7 @@ public class Stock : MonoBehaviour
 
     public void Undo(int cardsShown)
     {
-        if (cardsShown == -1)
+        if (cardsShown < 0)
         {
             cardPointer = cardList.Count;
             cardPointer = GetNextLast(-1);

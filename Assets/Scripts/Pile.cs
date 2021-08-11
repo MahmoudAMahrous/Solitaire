@@ -52,18 +52,26 @@ public class Pile : MonoBehaviour
         card.SetNewPile(false);
     }
 
-    public void MoveCardToPile(Card card, Pile newPile, bool moveStack = false)
+    public void MoveCardToPile(Card card, Pile newPile, bool clickedCard = false)
     {
         string move = pileNumber + " " + newPile.pileNumber + " " + GetStackLength(card);
+        int score = 0;
         cardList.Remove(card);
         newPile.AddCard(card);
-        //move the stack to new pile
-        if (moveStack)
+        if (clickedCard)
         {
+            //move the stack to new pile 
             while (cardIndexToFollow < cardList.Count)
                 MoveCardToPile(cardList[cardIndexToFollow], newPile);
-            if (RevealLastCard()) move += " F"; //last card flipped
-            if (card.beingDragged) GameManager.current.RegisterMove(move); //only register the move is made by the player
+            if (RevealLastCard())
+            {
+                move += " F"; //last card flipped
+                score += 5;
+            }
+            else move += " N"; //last card wasn't flipped
+            if (!isFoundation && newPile.isFoundation) score = 10;
+            else if (isFoundation && !newPile.isFoundation) score = -15;
+            if (card.beingDragged) GameManager.current.RegisterMove(move, score); //only register the move if made by the player
         }
     }
 
@@ -131,8 +139,11 @@ public class Pile : MonoBehaviour
     public void Undo(Pile pile, int numberOfCardsToReturn, bool hideLastCard)
     {
         cardIndexToFollow = cardList.Count - numberOfCardsToReturn;
-        if (hideLastCard) pile.HideLastCard();
-        MoveCardToPile(cardList[cardIndexToFollow], pile, true);        
+        if (hideLastCard)
+        {
+            pile.HideLastCard();
+        }
+        MoveCardToPile(cardList[cardIndexToFollow], pile, true);
     }
 
     public void ReturnCardToStock()
