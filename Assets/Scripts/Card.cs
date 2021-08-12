@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -9,8 +9,7 @@ public class Card : MonoBehaviour
 {
     public int number;
     public CardType type;
-    public TextMeshPro cardNumberText;
-    public Renderer cardTypeImage;
+    public TextMeshPro[] cardNumberTexts, cardSymbolTexts;
     public bool cardFacingUp = false;
     public Pile currentPile, newPile;
     public bool inStock = true;
@@ -27,25 +26,37 @@ public class Card : MonoBehaviour
     {
         number = n;
         type = t;
-        cardNumberText.text = (n != 1 && n < 11 ? n.ToString() : (n == 1 ? "A" : n == 11 ? "J" : n == 12 ? "Q" : "K"));
+        string cardNum = (n != 1 && n < 11 ? n.ToString() : (n == 1 ? "A" : n == 11 ? "J" : n == 12 ? "Q" : "K"));
+        Color cardColor = Color.yellow;
+        string cardSymbol = "";
         switch (type)
         {
             case CardType.heart:
-                cardTypeImage.material.color = Color.red;
-                cardNumberText.text += " H";
+                cardColor = Color.red;
+                cardSymbol = "♥";
                 break;
             case CardType.club:
-                cardTypeImage.material.color = Color.black;
-                cardNumberText.text += " C";
+                cardColor = Color.black;
+                cardSymbol = "♣";
                 break;
             case CardType.diamond:
-                cardTypeImage.material.color = Color.red;
-                cardNumberText.text += " D";
+                cardColor = Color.red;
+                cardSymbol = "♦";
                 break;
             case CardType.spade:
-                cardTypeImage.material.color = Color.black;
-                cardNumberText.text += " S";
+                cardColor = Color.black;
+                cardSymbol = "♠";
                 break;
+        }
+        foreach (TextMeshPro num in cardNumberTexts)
+        {
+            num.color = cardColor;
+            num.text = cardNum;
+        }
+        foreach (TextMeshPro sym in cardSymbolTexts)
+        {
+            sym.text = cardSymbol;
+            sym.color = cardColor;
         }
     }
 
@@ -66,9 +77,8 @@ public class Card : MonoBehaviour
         {
             beingDragged = true;
             SetNewPile(false);
-            positionToTransfer = transform.position;
             transform.eulerAngles = Vector3.right * 90f;
-            transform.position += Vector3.up * 1f;
+            transform.position += Vector3.up * 0.5f;
         }
         //The card is left
         else if (Input.GetMouseButtonUp(0) && beingDragged)
@@ -86,8 +96,14 @@ public class Card : MonoBehaviour
             }
             else //if the pile not changed return back
             {
-                MoveToPosition(positionToTransfer);
-                if (!inStock) currentPile.StopMovingStack();
+                if (!inStock)
+                {
+                    currentPile.ReturnCards();
+                }
+                else
+                {
+                    MoveToPosition(GameManager.current.stock.GetFirstWastePosition());
+                }
             }
             beingDragged = false;
         }

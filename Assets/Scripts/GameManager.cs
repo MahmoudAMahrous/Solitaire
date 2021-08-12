@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class GameManager : MonoBehaviour
     public Pile[] piles;
     public Stock stock;
     public int playerScore = 0;
+    public TextMeshProUGUI scoreText;
     List<string> moveHistory;
 
     void Start()
@@ -21,6 +23,7 @@ public class GameManager : MonoBehaviour
         moveHistory = new List<string>();
         for (int i = 0; i < piles.Length; i++) piles[i].pileNumber = i.ToString();
         GenerateCards();
+        UpdateScoreText();
     }
 
     void GenerateCards()
@@ -72,6 +75,7 @@ public class GameManager : MonoBehaviour
         if (playerScore < 0) playerScore = 0;
         print(move);
         moveHistory.Add(move);
+        UpdateScoreText();
     }
 
     public void Undo()
@@ -96,5 +100,11 @@ public class GameManager : MonoBehaviour
         }
         playerScore = lastScore;
         moveHistory.RemoveAt(moveHistory.Count - 1);
+        UpdateScoreText();
+    }
+
+    void UpdateScoreText()
+    {
+        scoreText.text = "Score: " + playerScore + "      Moves: " + moveHistory.Count;
     }
 }

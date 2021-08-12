@@ -10,12 +10,14 @@ public class Stock : MonoBehaviour
     int cardPointer = -1;
     public Vector3[] wastePositions; //waste cards position is relative to the stock object
     public bool TurnThreeMode = false;
+    public GameObject pilePlace;
     //vars for clicking the stock
     RaycastHit hit;
 
     void Start()
     {
         cardList = new List<Card>();
+        Instantiate(pilePlace, transform.position - Vector3.up * spaceBetweenCards, Quaternion.Euler(90, 0, 0)).transform.SetParent(transform, true);
     }
 
     private void Update()
@@ -124,5 +126,10 @@ public class Stock : MonoBehaviour
     {
         cardPointer = GetNextLast(1);
         RefreshStockPositions();
+    }
+
+    public Vector3 GetFirstWastePosition()
+    {
+        return transform.position + wastePositions[0];
     }
 }

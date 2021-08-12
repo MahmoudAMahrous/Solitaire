@@ -6,6 +6,7 @@ public class Pile : MonoBehaviour
 {
     public string pileNumber = "";
     public Vector2 spaceBetweenCards = new Vector2(0.3f, 0.01f); //x for z space & y for y space
+    public GameObject pilePlace;
     Vector3 pileStartPosition;
     List<Card> cardList;
     //var for moving stack
@@ -18,6 +19,7 @@ public class Pile : MonoBehaviour
         pileStartPosition = transform.position;
         if (!isFoundation) pileStartPosition.z += transform.localScale.z / 2 + 0.5f;
         cardList = new List<Card>();
+        Instantiate(pilePlace, pileStartPosition - Vector3.up * spaceBetweenCards.y, Quaternion.Euler(90, 0, 0)).transform.SetParent(transform, true);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -78,7 +80,7 @@ public class Pile : MonoBehaviour
     public void AddCard(Card card)
     {
         cardList.Add(card);
-        card.MoveToPosition(pileStartPosition + Vector3.back * cardList.Count * spaceBetweenCards.x + Vector3.up * cardList.Count * spaceBetweenCards.y);
+        card.MoveToPosition(pileStartPosition + Vector3.back * (cardList.Count-1) * spaceBetweenCards.x + Vector3.up * (cardList.Count-1) * spaceBetweenCards.y);
         card.currentPile = this;
     }
 
@@ -108,13 +110,12 @@ public class Pile : MonoBehaviour
         }
     }
 
-    public void StopMovingStack()
+    public void ReturnCards()
     {
-        if (cardIndexToFollow == cardList.Count - 1) return;
-        for (int i = cardIndexToFollow + 1; i < cardList.Count; i++)
+        for (int i = cardIndexToFollow; i < cardList.Count; i++)
         {
             cardList[i].MoveToPosition(pileStartPosition +
-                Vector3.back * (i+1) * spaceBetweenCards.x + Vector3.up * (i+1) * spaceBetweenCards.y);
+                Vector3.back * (i) * spaceBetweenCards.x + Vector3.up * (i) * spaceBetweenCards.y);
         }
     }
 
