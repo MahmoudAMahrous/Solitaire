@@ -9,47 +9,59 @@ public class GameManager : MonoBehaviour
     public GameObject CardPrefab;
     [HideInInspector]
     public static GameManager current;
+    public List<Card> cardReferences;
     [Header("Cards Piles:")]
     public Pile[] piles;
     public Stock stock;
     public int playerScore = 0;
     public TextMeshProUGUI scoreText;
+    public Help help;
+    public ParticleSystem playerWonPS;
+    public bool playing = false;
     List<string> moveHistory;
+    int numberOfCardsInFoundation = 0;
 
     void Start()
     {
         if (current == null) current = this;
         else Destroy(gameObject);
         moveHistory = new List<string>();
+        cardReferences = new List<Card>();
+        numberOfCardsInFoundation = 0;
         for (int i = 0; i < piles.Length; i++) piles[i].pileNumber = i.ToString();
         GenerateCards();
         UpdateScoreText();
+        playing = true;
     }
 
     void GenerateCards()
     {
         //remove all existing cards
-        List<Card> deck = new List<Card>();
         for (int t = 0; t < 4; t++) //Loop 4 times for the type
             for (int n = 1; n <= 13; n++) //each type has 13 cards
             {
                 Card card = Instantiate(CardPrefab, transform).GetComponent<Card>();
                 card.SetCard(n, (CardType)t);
-                deck.Add(card);
+                cardReferences.Add(card);
             }
         //shuffle the deck
-        for (int i = 0; i < deck.Count; i++)
+        for (int i = 0; i < cardReferences.Count; i++)
         {
-            int j = Random.Range(i, deck.Count);
-            Card tmp = deck[i];
-            deck[i] = deck[j];
-            deck[j] = tmp;
+            int j = Random.Range(i, cardReferences.Count);
+            Card tmp = cardReferences[i];
+            cardReferences[i] = cardReferences[j];
+            cardReferences[j] = tmp;
         }
-        //putting cards in the right place
+        PutCardsInPlace();
+    }
+
+    void PutCardsInPlace()
+    {
+        List<Card> cards = new List<Card>(cardReferences);
         float cardYPosition = 0;
-        foreach (Card c in deck)
+        foreach (Card c in cards)
         {
-            c.transform.eulerAngles = new Vector3(-90, Random.Range(-5,5), 0);
+            c.transform.eulerAngles = new Vector3(-90, Random.Range(-5, 5), 0);
             c.transform.position = stock.transform.position + Vector3.up * cardYPosition;
             cardYPosition += 0.01f;
         }
@@ -58,14 +70,14 @@ public class GameManager : MonoBehaviour
         {
             for (int j = i; j < 7; j++)
             {
-                piles[j].AddCard(deck[deck.Count - 1]);
-                deck[deck.Count - 1].inStock = false;
-                deck.RemoveAt(deck.Count - 1);
+                piles[j].AddCard(cards[cards.Count - 1]);
+                cards[cards.Count - 1].inStock = false;
+                cards.RemoveAt(cards.Count - 1);
                 if (i == j) piles[j].RevealLastCard();
             }
         }
-        deck.Reverse();
-        stock.cardList.AddRange(deck);
+        cards.Reverse();
+        stock.cardList.AddRange(cards);
     }
 
     public void RegisterMove(string move, int score)
@@ -106,5 +118,17 @@ public class GameManager : MonoBehaviour
     void UpdateScoreText()
     {
         scoreText.text = "Score: " + playerScore + "      Moves: " + moveHistory.Count;
+    }
+
+    public void CardAddedToFoundation(bool added = true)
+    {
+        numberOfCardsInFoundation += added ? 1 : -1;
+        if (numberOfCardsInFoundation == 52) PlayerWon();
+    }
+
+    void PlayerWon()
+    {
+        playing = false;
+        playerWonPS.Play(true);
     }
 }

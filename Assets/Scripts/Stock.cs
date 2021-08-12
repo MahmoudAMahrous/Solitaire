@@ -22,6 +22,7 @@ public class Stock : MonoBehaviour
 
     private void Update()
     {
+        if (!GameManager.current.playing) return;
         ClickStock();
     }
 

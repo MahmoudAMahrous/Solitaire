@@ -62,6 +62,7 @@ public class Card : MonoBehaviour
 
     void Update()
     {
+        if (!GameManager.current.playing) return;
         ClickCard();
         MoveCard();
     }

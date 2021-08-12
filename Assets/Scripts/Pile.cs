@@ -26,14 +26,25 @@ public class Pile : MonoBehaviour
     {
         Card card = other.GetComponent<Card>();
         if (!card.beingDragged) return;
+        card.SetNewPile(IsCardWelcome(card), this);
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        Card card = other.GetComponent<Card>();
+        if (!card.beingDragged) return;
+        card.SetNewPile(false);
+    }
+
+    public bool IsCardWelcome(Card card)
+    {
         if (!isFoundation)
         {
             if (!cardList.Contains(card) && //if it's a new card
                 ((cardList.Count == 0 && card.number == 13) || //you start with a king
                 (cardList.Count != 0 && cardList[cardList.Count - 1].number == card.number + 1 && //the number is appropriate
                 (Mathf.Abs(card.type - cardList[cardList.Count - 1].type) != 2 && card.type != cardList[cardList.Count - 1].type)))) //the color is appropriate
-                card.SetNewPile(true, this);
-            else card.SetNewPile(false);
+                return true;
         }
         else
         {
@@ -42,16 +53,9 @@ public class Pile : MonoBehaviour
                 ((cardList.Count == 0 && card.number == 1) || //you start with an Ace
                 ((cardList.Count != 0 && cardList[cardList.Count - 1].number == card.number - 1) && //the number is appropriate
                 card.type == cardList[0].type))) //the type is appropriate
-                card.SetNewPile(true, this);
-            else card.SetNewPile(false);
+                return true;
         }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        Card card = other.GetComponent<Card>();
-        if (!card.beingDragged) return;
-        card.SetNewPile(false);
+        return false;
     }
 
     public void MoveCardToPile(Card card, Pile newPile, bool clickedCard = false)
@@ -79,8 +83,8 @@ public class Pile : MonoBehaviour
 
     public void AddCard(Card card)
     {
+        card.MoveToPosition(GetNewCardPosition());
         cardList.Add(card);
-        card.MoveToPosition(pileStartPosition + Vector3.back * (cardList.Count-1) * spaceBetweenCards.x + Vector3.up * (cardList.Count-1) * spaceBetweenCards.y);
         card.currentPile = this;
     }
 
@@ -101,7 +105,7 @@ public class Pile : MonoBehaviour
 
     public void MoveStack(Card card)
     {
-        cardIndexToFollow = cardList.IndexOf(card);
+        cardIndexToFollow = GetCardIndex(card);
         if (cardIndexToFollow < 0 || cardIndexToFollow == cardList.Count - 1) return;
         for (int i = cardIndexToFollow + 1; i < cardList.Count; i++)
         {
@@ -121,20 +125,20 @@ public class Pile : MonoBehaviour
 
     public bool IsLastCard(Card card)
     {
-        if (cardList.IndexOf(card) == cardList.Count - 1) return true;
+        if (GetCardIndex(card) == cardList.Count - 1) return true;
         return false;
     }
 
     //only for foundations
     public bool CanCardMove(Card card)
     {
-        if (!isFoundation || cardList.IndexOf(card) == cardList.Count - 1) return true; //making sure the player can only take the card on the top
+        if (!isFoundation || GetCardIndex(card) == cardList.Count - 1) return true; //making sure the player can only take the card on the top
         return false;
     }
 
     public int GetStackLength(Card card)
     {
-        return cardList.Count - cardList.IndexOf(card);
+        return cardList.Count - GetCardIndex(card);
     }
 
     public void Undo(Pile pile, int numberOfCardsToReturn, bool hideLastCard)
@@ -153,5 +157,27 @@ public class Pile : MonoBehaviour
         cardList[cardList.Count - 1].RemovePileReferences();
         cardList.RemoveAt(cardList.Count - 1);
         GameManager.current.stock.RefreshAfterUndoFromPile();
+    }
+
+    public Card GetLastCard()
+    {
+        return cardList.Count == 0 ? null : cardList[cardList.Count - 1];
+    }
+
+    public Vector3 GetNewCardPosition()
+    {
+        return pileStartPosition + Vector3.back * cardList.Count * spaceBetweenCards.x + Vector3.up * cardList.Count * spaceBetweenCards.y;
+    }
+
+    public bool OnTopOfASimilarCard(Card card)
+    {
+        int i = GetCardIndex(card);
+        if (i != 0 && cardList[i - 1].cardFacingUp) return true;
+        else return false;
+    }
+
+    public int GetCardIndex(Card card)
+    {
+        return cardList.IndexOf(card);
     }
 }
