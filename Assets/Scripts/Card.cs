@@ -101,33 +101,35 @@ public class Card : MonoBehaviour
             newPos.y = transform.position.y;
             transform.position = newPos;
             if (!inStock) currentPile.MoveStack(this);
-        }
-        //The card is left
-        if (Input.GetMouseButtonUp(0) && beingDragged)
-        {
-            if (!inStock && currentPile != newPile) //if moving to a new pile
+
+            //The card is left
+            if (Input.GetMouseButtonUp(0))
             {
-                currentPile.MoveCardToPile(this, newPile, true);
-            }
-            else if (inStock && newPile != null) //if moving from stock to new pile
-            {
-                inStock = false;
-                newPile.AddCard(this);
-                GameManager.current.stock.GoBack();
-                GameManager.current.RegisterMove("S " + newPile.pileNumber, newPile.isFoundation ? 10 : 5);
-            }
-            else //if the pile not changed return back
-            {
-                if (!inStock)
+                if (!inStock && currentPile != newPile) //if moving to a new pile
                 {
-                    currentPile.ReturnCards();
+                    currentPile.MoveCardToPile(this, newPile, true);
                 }
-                else
+                else if (inStock && newPile != null) //if moving from stock to new pile
                 {
-                    MoveToPosition(GameManager.current.stock.GetFirstWastePosition());
+                    inStock = false;
+                    newPile.AddCard(this);
+                    GameManager.current.stock.GoBack();
+                    GameManager.current.stock.cardsTaken++;
+                    GameManager.current.RegisterMove("S " + newPile.pileNumber, newPile.isFoundation ? 10 : 5);
                 }
+                else //if the pile not changed return back
+                {
+                    if (!inStock)
+                    {
+                        currentPile.ReturnCards();
+                    }
+                    else
+                    {
+                        MoveToPosition(GameManager.current.stock.GetFirstWastePosition());
+                    }
+                }
+                beingDragged = false;
             }
-            beingDragged = false;
         }
     }
 

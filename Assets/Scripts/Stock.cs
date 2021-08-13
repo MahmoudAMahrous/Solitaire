@@ -11,7 +11,7 @@ public class Stock : MonoBehaviour
     public Vector3[] wastePositions; //waste cards position is relative to the stock object
     public bool TurnThreeMode = false;
     public GameObject pilePlace;
-    int takenCards = 0;
+    public int cardsTaken = 0;
     //vars for clicking the stock
     RaycastHit hit;
 
@@ -23,6 +23,7 @@ public class Stock : MonoBehaviour
 
     public void ClickStock()
     {
+        if (IsEmptyStock()) return;
         string move = "SM ";
         int cardsShown = 0;
         for (int i = 0; i < (TurnThreeMode ? 3 : 1); i++)
@@ -30,7 +31,7 @@ public class Stock : MonoBehaviour
             cardPointer = GetNextLast(1);
             if (cardPointer == -2 && i == 0)
             {
-                cardsShown = -1;
+                cardsShown = -cardsTaken;
                 ResetStock();
                 break;
             }
@@ -41,7 +42,10 @@ public class Stock : MonoBehaviour
             }
         }
         move += cardsShown;
-        GameManager.current.RegisterMove(move, cardsShown < 0 ? -100 : 0);
+        int points = 0;
+        if (TurnThreeMode && cardsShown == 0) points = -20;
+        else if (!TurnThreeMode && cardsShown <= 0) points = -100;
+        GameManager.current.RegisterMove(move, points);
     }
 
     public void RefreshStockPositions()
@@ -83,6 +87,7 @@ public class Stock : MonoBehaviour
     void ResetStock()
     {
         cardPointer = -1;
+        cardsTaken = 0;
         RefreshStockPositions();
     }
 
@@ -100,10 +105,11 @@ public class Stock : MonoBehaviour
 
     public void Undo(int cardsShown)
     {
-        if (cardsShown < 0)
+        if (cardsShown <= 0)
         {
             cardPointer = cardList.Count;
             cardPointer = GetNextLast(-1);
+            cardsTaken = -cardsShown;
             RefreshStockPositions();
         }
         else
@@ -116,6 +122,7 @@ public class Stock : MonoBehaviour
 
     public void RefreshAfterUndoFromPile()
     {
+        cardsTaken--;
         cardPointer = GetNextLast(1);
         RefreshStockPositions();
     }
@@ -129,11 +136,12 @@ public class Stock : MonoBehaviour
     {
         cardPointer = -1;
         cardList.Clear();
-        takenCards = 0;
+        cardsTaken = 0;
     }
 
-    public void CardTaken(int add)
+    public bool IsEmptyStock()
     {
-        takenCards += add;
+        foreach (Card card in cardList) if (card.inStock) return false;
+        return true;
     }
 }
