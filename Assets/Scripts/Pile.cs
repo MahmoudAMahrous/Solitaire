@@ -63,6 +63,7 @@ public class Pile : MonoBehaviour
         string move = pileNumber + " " + newPile.pileNumber + " " + GetStackLength(card);
         int score = 0;
         cardList.Remove(card);
+        if (isFoundation) GameManager.current.CardAddedToFoundation(false);
         newPile.AddCard(card);
         if (clickedCard)
         {
@@ -83,6 +84,7 @@ public class Pile : MonoBehaviour
 
     public void AddCard(Card card)
     {
+        if (isFoundation) GameManager.current.CardAddedToFoundation();
         card.MoveToPosition(GetNewCardPosition());
         cardList.Add(card);
         card.currentPile = this;
@@ -179,5 +181,20 @@ public class Pile : MonoBehaviour
     public int GetCardIndex(Card card)
     {
         return cardList.IndexOf(card);
+    }
+
+    public void ClearPile()
+    {
+        cardList.Clear();
+    }
+
+    public void RefreshFoundationPositions()
+    {
+        pileStartPosition = transform.position;
+        for (int i = 0; i < cardList.Count; i++)
+        {
+            cardList[i].MoveToPosition(pileStartPosition + Vector3.back * i * spaceBetweenCards.x +
+                Vector3.up * i * spaceBetweenCards.y);
+        }
     }
 }

@@ -21,6 +21,12 @@ public class Card : MonoBehaviour
     public float cardMovingSpeed = 0.5f;
     bool cardMoving;
     Vector3 positionToTransfer;
+    Camera camera;
+
+    private void Start()
+    {
+        camera = Camera.main;
+    }
 
     public void SetCard(int n, CardType t)
     {
@@ -63,26 +69,41 @@ public class Card : MonoBehaviour
     void Update()
     {
         if (!GameManager.current.playing) return;
-        ClickCard();
+        DragCard();
         MoveCard();
     }
 
-    void ClickCard()
+    public void StartDrag()
     {
-        if (cardMoving) return; //if the card is being moved by the game don't grab it
-        //Check if the card is clicked/touched
-        if (Input.GetMouseButtonDown(0) &&
-            Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit) && hit.transform == transform &&
-            ((inStock && GameManager.current.stock.CanCardMove(this)) ||
-             !inStock && currentPile.CanCardMove(this)))
+        if (CanCardMove())
         {
             beingDragged = true;
             SetNewPile(false);
             transform.eulerAngles = Vector3.right * 90f;
             transform.position += Vector3.up * 0.5f;
         }
+    }
+
+    bool CanCardMove()
+    {
+        return ((inStock && GameManager.current.stock.CanCardMove(this)) ||
+                (!inStock && currentPile.CanCardMove(this))) &&
+                !cardMoving;
+    }
+
+    void DragCard()
+    {
+        //Drag the card
+        if (beingDragged)
+        {
+            Vector3 newPos = camera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y,
+                camera.WorldToScreenPoint(transform.position).z));
+            newPos.y = transform.position.y;
+            transform.position = newPos;
+            if (!inStock) currentPile.MoveStack(this);
+        }
         //The card is left
-        else if (Input.GetMouseButtonUp(0) && beingDragged)
+        if (Input.GetMouseButtonUp(0) && beingDragged)
         {
             if (!inStock && currentPile != newPile) //if moving to a new pile
             {
@@ -107,15 +128,6 @@ public class Card : MonoBehaviour
                 }
             }
             beingDragged = false;
-        }
-        //Drag the card
-        if (beingDragged)
-        {
-            Vector3 newPos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y,
-                Camera.main.WorldToScreenPoint(transform.position).z));
-            newPos.y = transform.position.y;
-            transform.position = newPos;
-            if (!inStock) currentPile.MoveStack(this);
         }
     }
 
@@ -155,4 +167,13 @@ public class Card : MonoBehaviour
     {
         newPile = currentPile = null;
     }
+
+    public void ResetCard()
+    {
+        RevealHide(false);
+        currentPile = newPile = null;
+        inStock = true;
+    }
+
+
 }

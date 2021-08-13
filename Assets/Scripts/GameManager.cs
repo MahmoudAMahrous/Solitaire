@@ -13,13 +13,21 @@ public class GameManager : MonoBehaviour
     [Header("Cards Piles:")]
     public Pile[] piles;
     public Stock stock;
+    [Space]
     public int playerScore = 0;
-    public TextMeshProUGUI scoreText;
-    public Help help;
     public ParticleSystem playerWonPS;
     public bool playing = false;
+    public UIManager uiManager;
     List<string> moveHistory;
     int numberOfCardsInFoundation = 0;
+    [Header("Orientaion Settings")]
+    public Vector3 cameraLandscapePos;
+    public Vector3 stockLandscapePos;
+    Vector3 cameraNormalPos, stockNormalPos;
+    public Vector3[] foundationsLandScapePos;
+    Vector3[] foundationsNormalPos;
+    DeviceOrientation lastKnownDeviceOrientaion;
+    bool orientaionLocked = false;
 
     void Start()
     {
@@ -27,11 +35,51 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
         moveHistory = new List<string>();
         cardReferences = new List<Card>();
+        cameraNormalPos = Camera.main.transform.position;
+        stockNormalPos = stock.transform.position;
+        foundationsNormalPos = new Vector3[4];
+        int fnp = 0;
+        for (int i = 0; i < piles.Length; i++)
+        {
+            piles[i].pileNumber = i.ToString();
+            if (piles[i].isFoundation) foundationsNormalPos[fnp++] = piles[i].transform.position;
+        }
+        lastKnownDeviceOrientaion = DeviceOrientation.Portrait;
+    }
+
+    private void Update()
+    {
+        if (!orientaionLocked &&
+            lastKnownDeviceOrientaion != Input.deviceOrientation
+            && (Input.deviceOrientation != DeviceOrientation.FaceDown||
+            Input.deviceOrientation != DeviceOrientation.FaceDown))
+        {
+            SetOrientation();
+            lastKnownDeviceOrientaion = Input.deviceOrientation;
+        }
+    }
+
+    public void StartNewGame(bool TurnThreeMode)
+    {
+        if (cardReferences.Count == 0) GenerateCards();
+        ShuffleCards();
+        ResetGame();
+        stock.TurnThreeMode = TurnThreeMode;
+    }
+
+    public void ResetGame()
+    {
+        foreach (Card card in cardReferences) card.ResetCard();
+        foreach (Pile pile in piles) pile.ClearPile();
+        stock.ClearStock();
+        PutCardsInPlace();
+        uiManager.HideEverything();
+        uiManager.ShowInGameScreen(true);
         numberOfCardsInFoundation = 0;
-        for (int i = 0; i < piles.Length; i++) piles[i].pileNumber = i.ToString();
-        GenerateCards();
-        UpdateScoreText();
+        uiManager.UpdateScore(playerScore, moveHistory.Count);
         playing = true;
+        moveHistory.Clear();
+        playerScore = 0;
     }
 
     void GenerateCards()
@@ -44,7 +92,10 @@ public class GameManager : MonoBehaviour
                 card.SetCard(n, (CardType)t);
                 cardReferences.Add(card);
             }
-        //shuffle the deck
+    }
+
+    void ShuffleCards()
+    {
         for (int i = 0; i < cardReferences.Count; i++)
         {
             int j = Random.Range(i, cardReferences.Count);
@@ -52,7 +103,6 @@ public class GameManager : MonoBehaviour
             cardReferences[i] = cardReferences[j];
             cardReferences[j] = tmp;
         }
-        PutCardsInPlace();
     }
 
     void PutCardsInPlace()
@@ -87,7 +137,7 @@ public class GameManager : MonoBehaviour
         if (playerScore < 0) playerScore = 0;
         print(move);
         moveHistory.Add(move);
-        UpdateScoreText();
+        uiManager.UpdateScore(playerScore, moveHistory.Count);
     }
 
     public void Undo()
@@ -112,12 +162,7 @@ public class GameManager : MonoBehaviour
         }
         playerScore = lastScore;
         moveHistory.RemoveAt(moveHistory.Count - 1);
-        UpdateScoreText();
-    }
-
-    void UpdateScoreText()
-    {
-        scoreText.text = "Score: " + playerScore + "      Moves: " + moveHistory.Count;
+        uiManager.UpdateScore(playerScore, moveHistory.Count);
     }
 
     public void CardAddedToFoundation(bool added = true)
@@ -130,5 +175,63 @@ public class GameManager : MonoBehaviour
     {
         playing = false;
         playerWonPS.Play(true);
+        uiManager.PlayerWon();
+    }
+
+    public void StopWinningParticles()
+    {
+        playerWonPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+    }
+
+    void SetOrientation()
+    {
+        Vector3[] foundationsNewPos = null;
+        if (Input.deviceOrientation == DeviceOrientation.LandscapeLeft ||
+            Input.deviceOrientation == DeviceOrientation.LandscapeRight)
+        {
+            foundationsNewPos = foundationsLandScapePos;
+            stock.transform.position = stockLandscapePos;
+            Camera.main.transform.position = cameraLandscapePos;
+        }
+        else if (Input.deviceOrientation == DeviceOrientation.Portrait ||
+                 Input.deviceOrientation == DeviceOrientation.PortraitUpsideDown)
+        {
+            foundationsNewPos = foundationsNormalPos;
+            stock.transform.position = stockNormalPos;
+            Camera.main.transform.position = cameraNormalPos;
+        }
+        else return;
+        int counter = 0;
+        foreach (Pile pile in piles)
+            if (pile.isFoundation)
+            {
+                pile.transform.position = foundationsNewPos[counter++];
+                pile.RefreshFoundationPositions();
+            }
+        stock.RefreshStockPositions();
+    }
+
+    public void LockOrientation()
+    {
+        orientaionLocked = !orientaionLocked;
+        Screen.orientation = ScreenOrientation.AutoRotation;
+        if (orientaionLocked)
+        {
+            switch (lastKnownDeviceOrientaion)
+            {
+                case DeviceOrientation.Portrait:
+                case DeviceOrientation.PortraitUpsideDown:
+                    Screen.orientation = ScreenOrientation.Portrait;
+                    break;
+                case DeviceOrientation.LandscapeLeft:
+                case DeviceOrientation.LandscapeRight:
+                    Screen.orientation = ScreenOrientation.Landscape;
+                    break;
+                default:
+                    print(lastKnownDeviceOrientaion);
+                    break;
+            }
+        }
+        
     }
 }

@@ -11,6 +11,7 @@ public class Stock : MonoBehaviour
     public Vector3[] wastePositions; //waste cards position is relative to the stock object
     public bool TurnThreeMode = false;
     public GameObject pilePlace;
+    int takenCards = 0;
     //vars for clicking the stock
     RaycastHit hit;
 
@@ -20,40 +21,30 @@ public class Stock : MonoBehaviour
         Instantiate(pilePlace, transform.position - Vector3.up * spaceBetweenCards, Quaternion.Euler(90, 0, 0)).transform.SetParent(transform, true);
     }
 
-    private void Update()
+    public void ClickStock()
     {
-        if (!GameManager.current.playing) return;
-        ClickStock();
-    }
-
-    void ClickStock()
-    {
-        if (Input.GetMouseButtonDown(0) &&
-        Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit) && hit.transform == transform)
+        string move = "SM ";
+        int cardsShown = 0;
+        for (int i = 0; i < (TurnThreeMode ? 3 : 1); i++)
         {
-            string move = "SM ";
-            int cardsShown = 0;
-            for (int i = 0; i < (TurnThreeMode ? 3 : 1); i++)
+            cardPointer = GetNextLast(1);
+            if (cardPointer == -2 && i == 0)
             {
-                cardPointer = GetNextLast(1);
-                if (cardPointer == -2 && i == 0)
-                {
-                    cardsShown = -1;
-                    ResetStock();
-                    break;
-                }
-                else if (cardPointer != -2)
-                {
-                    RefreshStockPositions();
-                    cardsShown++;
-                }
+                cardsShown = -1;
+                ResetStock();
+                break;
             }
-            move += cardsShown;
-            GameManager.current.RegisterMove(move, cardsShown < 0 ? -100 : 0);
+            else if (cardPointer != -2)
+            {
+                RefreshStockPositions();
+                cardsShown++;
+            }
         }
+        move += cardsShown;
+        GameManager.current.RegisterMove(move, cardsShown < 0 ? -100 : 0);
     }
 
-    void RefreshStockPositions()
+    public void RefreshStockPositions()
     {
         int wastePos = 1;
         for (int i = cardList.Count - 1; i >= 0; i--)
@@ -132,5 +123,17 @@ public class Stock : MonoBehaviour
     public Vector3 GetFirstWastePosition()
     {
         return transform.position + wastePositions[0];
+    }
+
+    public void ClearStock()
+    {
+        cardPointer = -1;
+        cardList.Clear();
+        takenCards = 0;
+    }
+
+    public void CardTaken(int add)
+    {
+        takenCards += add;
     }
 }
