@@ -6,7 +6,7 @@ using TMPro;
 public class UIManager : MonoBehaviour
 {
     public Animator inGameMenuAnimator, pauseMenuAnimator, playerWonMenuAnimator, newGameMenuAnimator, mainMenuAnimator;
-    public GameObject skipPlayerWonSeqButton;
+    public GameObject skipPlayerWonSeqButton, ContinueButton;
     public TextMeshProUGUI inGameScore, playerWonScore;
 
     private void Start()
@@ -62,5 +62,10 @@ public class UIManager : MonoBehaviour
     public void ShowNewGameMenu(bool show)
     {
         newGameMenuAnimator.SetBool("Show", show);
+    }
+
+    public void ShowContinueButton(bool Show)
+    {
+        ContinueButton.SetActive(Show);
     }
 }

@@ -4,40 +4,44 @@ using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
-    
+    public float clickMaxTime = 0.1f;
+    public Help help;
     RaycastHit hit;
-    bool aCardIsBeingDragged = false;
-    float timeSinceLastClick;
+    Card cardBeingDragged;
+    float clickTime = 0;
 
     void Update()
     {
         if (!GameManager.current.playing) return;
-        timeSinceLastClick += Time.deltaTime;
+        clickTime += Time.deltaTime;
         CheckForAClick();
     }
 
     void CheckForAClick()
     {
-        if (!aCardIsBeingDragged &&
+        if (cardBeingDragged == null &&
             Input.GetMouseButtonDown(0) &&
             Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit))
         {
             if (hit.transform.GetComponent<Stock>() != null)
             {
-                GameManager.current.stock.ClickStock();
+                GameManager.current.stock.ClickStock(true);
                 return;
             }
-            Card clickedCard = hit.transform.GetComponent<Card>();
-            if (clickedCard != null)
-            {
-                clickedCard.StartDrag();
-                aCardIsBeingDragged = true;
-            }
+            cardBeingDragged = hit.transform.GetComponent<Card>();
+            if (cardBeingDragged != null && !cardBeingDragged.StartDragging()) cardBeingDragged = null;
+            clickTime = 0;
         }
         else if (Input.GetMouseButtonUp(0))
         {
-            timeSinceLastClick = 0;
-            aCardIsBeingDragged = false;
+            if (cardBeingDragged == null) return;
+            if (clickTime <= clickMaxTime)
+            {
+                Pile newPile = help.CanCardGo(cardBeingDragged);
+                if (newPile != null) cardBeingDragged.SetNewPile(true, newPile);
+            }
+            cardBeingDragged.StopDragging();
+            cardBeingDragged = null;
         }
     }
 }

@@ -14,6 +14,7 @@ public class Stock : MonoBehaviour
     public int cardsTaken = 0;
     //vars for clicking the stock
     RaycastHit hit;
+    public int stockCount = 0;
 
     void Start()
     {
@@ -21,9 +22,9 @@ public class Stock : MonoBehaviour
         Instantiate(pilePlace, transform.position - Vector3.up * spaceBetweenCards, Quaternion.Euler(90, 0, 0)).transform.SetParent(transform, true);
     }
 
-    public void ClickStock()
+    public void ClickStock(bool registerMove)
     {
-        if (IsEmptyStock()) return;
+        if (stockCount == 0) return;
         string move = "SM ";
         int cardsShown = 0;
         for (int i = 0; i < (TurnThreeMode ? 3 : 1); i++)
@@ -45,7 +46,7 @@ public class Stock : MonoBehaviour
         int points = 0;
         if (TurnThreeMode && cardsShown == 0) points = -20;
         else if (!TurnThreeMode && cardsShown <= 0) points = -100;
-        GameManager.current.RegisterMove(move, points);
+        if (registerMove) GameManager.current.RegisterMove(move, points);
     }
 
     public void RefreshStockPositions()
@@ -123,6 +124,7 @@ public class Stock : MonoBehaviour
     public void RefreshAfterUndoFromPile()
     {
         cardsTaken--;
+        stockCount++;
         cardPointer = GetNextLast(1);
         RefreshStockPositions();
     }
@@ -139,9 +141,8 @@ public class Stock : MonoBehaviour
         cardsTaken = 0;
     }
 
-    public bool IsEmptyStock()
+    public Card GetCurrentCard()
     {
-        foreach (Card card in cardList) if (card.inStock) return false;
-        return true;
+        return cardList[cardPointer];
     }
 }

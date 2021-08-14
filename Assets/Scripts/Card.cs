@@ -68,20 +68,19 @@ public class Card : MonoBehaviour
 
     void Update()
     {
+        MoveCard();
         if (!GameManager.current.playing) return;
         DragCard();
-        MoveCard();
     }
 
-    public void StartDrag()
+    public bool StartDragging()
     {
-        if (CanCardMove())
-        {
-            beingDragged = true;
-            SetNewPile(false);
-            transform.eulerAngles = Vector3.right * 90f;
-            transform.position += Vector3.up * 0.5f;
-        }
+        if (!CanCardMove()) return false;
+        beingDragged = true;
+        SetNewPile(false);
+        transform.eulerAngles = Vector3.right * 90f;
+        transform.position += Vector3.up * 0.5f;
+        return true;
     }
 
     bool CanCardMove()
@@ -93,7 +92,6 @@ public class Card : MonoBehaviour
 
     void DragCard()
     {
-        //Drag the card
         if (beingDragged)
         {
             Vector3 newPos = camera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y,
@@ -101,36 +99,41 @@ public class Card : MonoBehaviour
             newPos.y = transform.position.y;
             transform.position = newPos;
             if (!inStock) currentPile.MoveStack(this);
+        }
+    }
 
-            //The card is left
-            if (Input.GetMouseButtonUp(0))
+    public void StopDragging()
+    {
+        if (!inStock && currentPile != newPile) //if moving to a new pile
+        {
+            currentPile.MoveCardToPile(this, newPile, true);
+        }
+        else if (inStock && newPile != null) //if moving from stock to new pile
+        {
+            MoveFromStock(newPile);
+            GameManager.current.RegisterMove("S " + newPile.pileNumber, newPile.isFoundation ? 10 : 5);
+        }
+        else //if the pile not changed return back
+        {
+            if (!inStock)
             {
-                if (!inStock && currentPile != newPile) //if moving to a new pile
-                {
-                    currentPile.MoveCardToPile(this, newPile, true);
-                }
-                else if (inStock && newPile != null) //if moving from stock to new pile
-                {
-                    inStock = false;
-                    newPile.AddCard(this);
-                    GameManager.current.stock.GoBack();
-                    GameManager.current.stock.cardsTaken++;
-                    GameManager.current.RegisterMove("S " + newPile.pileNumber, newPile.isFoundation ? 10 : 5);
-                }
-                else //if the pile not changed return back
-                {
-                    if (!inStock)
-                    {
-                        currentPile.ReturnCards();
-                    }
-                    else
-                    {
-                        MoveToPosition(GameManager.current.stock.GetFirstWastePosition());
-                    }
-                }
-                beingDragged = false;
+                currentPile.ReturnCards();
+            }
+            else
+            {
+                MoveToPosition(GameManager.current.stock.GetFirstWastePosition());
             }
         }
+        beingDragged = false;
+    }
+
+    public void MoveFromStock(Pile toPile)
+    {
+        inStock = false;
+        toPile.AddCard(this);
+        GameManager.current.stock.GoBack();
+        GameManager.current.stock.cardsTaken++;
+        GameManager.current.stock.stockCount--;
     }
 
     public void MoveToPosition(Vector3 pos)

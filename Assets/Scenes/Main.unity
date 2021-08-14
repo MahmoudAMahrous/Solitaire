@@ -819,7 +819,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1489.7, y: 0}
+  m_AnchoredPosition: {x: -2071, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &155459754
@@ -3083,7 +3083,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1489.7, y: 0}
+  m_AnchoredPosition: {x: -2567, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &589824990
@@ -8164,10 +8164,22 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1753569619}
-        m_TargetAssemblyTypeName: Help, Assembly-CSharp
-        m_MethodName: ShowHelp
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: HideEverything
         m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: Pause
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -13449,9 +13461,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1753569619}
-        m_TargetAssemblyTypeName: Help, Assembly-CSharp
-        m_MethodName: ShowHelp
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: HideEverything
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -13460,6 +13472,18 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: ShowNewGameMenu
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
         m_CallState: 2
 --- !u!114 &754904109
 MonoBehaviour:
@@ -14011,6 +14035,8 @@ MonoBehaviour:
   - {x: -1.8, y: 0, z: 0}
   TurnThreeMode: 0
   pilePlace: {fileID: 3089440191017532102, guid: 6832c0071c3084b4d99256aeab9b11f8, type: 3}
+  cardsTaken: 0
+  stockCount: 0
 --- !u!1 &859551426
 GameObject:
   m_ObjectHideFlags: 0
@@ -15971,9 +15997,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1753569619}
-        m_TargetAssemblyTypeName: Help, Assembly-CSharp
-        m_MethodName: ShowHelp
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: HideEverything
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -15982,6 +16008,18 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1753569620}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: ShowMainMenu
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
         m_CallState: 2
 --- !u!114 &1160791377
 MonoBehaviour:
@@ -23412,6 +23450,7 @@ MonoBehaviour:
   - {x: 8, y: 0, z: -2}
   - {x: 9, y: 0, z: -2}
   - {x: 10, y: 0, z: -2}
+  help: {fileID: 1753569619}
 --- !u!4 &1753569618
 Transform:
   m_ObjectHideFlags: 0
@@ -23457,6 +23496,7 @@ MonoBehaviour:
   newGameMenuAnimator: {fileID: 155459754}
   mainMenuAnimator: {fileID: 589824990}
   skipPlayerWonSeqButton: {fileID: 2104032904}
+  ContinueButton: {fileID: 1189044585}
   inGameScore: {fileID: 1682189503}
   playerWonScore: {fileID: 1722751116}
 --- !u!114 &1753569621
@@ -23471,6 +23511,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98b99a9f92dc3fe47b812bd41256c58f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clickMaxTime: 0.1
+  help: {fileID: 1753569619}
 --- !u!1 &1776280272
 GameObject:
   m_ObjectHideFlags: 0

@@ -14,8 +14,9 @@ public class Pile : MonoBehaviour
     //vars for Foundations
     public bool isFoundation = false;
 
-    void Start()
+    public void SetUpPile(int pileNum)
     {
+        pileNumber = pileNum.ToString();
         pileStartPosition = transform.position;
         if (!isFoundation) pileStartPosition.z += transform.localScale.z / 2 + 0.5f;
         cardList = new List<Card>();
@@ -58,14 +59,14 @@ public class Pile : MonoBehaviour
         return false;
     }
 
-    public void MoveCardToPile(Card card, Pile newPile, bool clickedCard = false)
+    public void MoveCardToPile(Card card, Pile newPile, bool hasStack = false)
     {
         string move = pileNumber + " " + newPile.pileNumber + " " + GetStackLength(card);
         int score = 0;
         cardList.Remove(card);
         if (isFoundation) GameManager.current.CardAddedToFoundation(false);
         newPile.AddCard(card);
-        if (clickedCard)
+        if (hasStack)
         {
             //move the stack to new pile 
             while (cardIndexToFollow < cardList.Count)

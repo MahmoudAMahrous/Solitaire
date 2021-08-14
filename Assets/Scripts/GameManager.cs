@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -28,6 +29,7 @@ public class GameManager : MonoBehaviour
     Vector3[] foundationsNormalPos;
     DeviceOrientation lastKnownDeviceOrientaion;
     bool orientaionLocked = false;
+    public Help help;
 
     void Start()
     {
@@ -41,10 +43,11 @@ public class GameManager : MonoBehaviour
         int fnp = 0;
         for (int i = 0; i < piles.Length; i++)
         {
-            piles[i].pileNumber = i.ToString();
+            piles[i].SetUpPile(i);
             if (piles[i].isFoundation) foundationsNormalPos[fnp++] = piles[i].transform.position;
         }
         lastKnownDeviceOrientaion = DeviceOrientation.Portrait;
+        CheckGameData();
     }
 
     private void Update()
@@ -62,9 +65,10 @@ public class GameManager : MonoBehaviour
     public void StartNewGame(bool TurnThreeMode)
     {
         if (cardReferences.Count == 0) GenerateCards();
-        ShuffleCards();
-        ResetGame();
         stock.TurnThreeMode = TurnThreeMode;
+        ShuffleCards();
+        PlayerPrefs.SetInt("Draw3", TurnThreeMode ? 1 : 0);
+        ResetGame();
     }
 
     public void ResetGame()
@@ -73,49 +77,60 @@ public class GameManager : MonoBehaviour
         foreach (Pile pile in piles) pile.ClearPile();
         stock.ClearStock();
         PutCardsInPlace();
-        uiManager.HideEverything();
-        uiManager.ShowInGameScreen(true);
         numberOfCardsInFoundation = 0;
-        uiManager.UpdateScore(playerScore, moveHistory.Count);
         playing = true;
         moveHistory.Clear();
         playerScore = 0;
+        uiManager.UpdateScore(playerScore, moveHistory.Count);
+        uiManager.HideEverything();
+        uiManager.ShowInGameScreen(true);
+        uiManager.ShowContinueButton(true);
     }
 
-    void GenerateCards()
+    void GenerateCards(string cardsString = "")
     {
-        //remove all existing cards
+        if(cardsString == "")
         for (int t = 0; t < 4; t++) //Loop 4 times for the type
             for (int n = 1; n <= 13; n++) //each type has 13 cards
             {
-                Card card = Instantiate(CardPrefab, transform).GetComponent<Card>();
-                card.SetCard(n, (CardType)t);
-                cardReferences.Add(card);
+                CreateCard(n, t);
             }
+        else
+        {
+            string[] cardData, cardsData = cardsString.Split('-');
+            foreach (string cd in cardsData)
+            {
+                if (cd == "") continue;
+                cardData = cd.Split(' ');
+                CreateCard(int.Parse(cardData[0]), int.Parse(cardData[1]));
+            }
+        }
+    }
+
+    void CreateCard(int number, int type)
+    {
+        Card card = Instantiate(CardPrefab, transform).GetComponent<Card>();
+        card.SetCard(number, (CardType)type);
+        cardReferences.Add(card);
     }
 
     void ShuffleCards()
     {
+        string cards = "";
         for (int i = 0; i < cardReferences.Count; i++)
         {
             int j = Random.Range(i, cardReferences.Count);
             Card tmp = cardReferences[i];
             cardReferences[i] = cardReferences[j];
             cardReferences[j] = tmp;
+            cards += cardReferences[i].number + " " + ((int)cardReferences[i].type) + "-";
         }
+        PlayerPrefs.SetString("Cards", cards);
     }
 
     void PutCardsInPlace()
     {
         List<Card> cards = new List<Card>(cardReferences);
-        float cardYPosition = 0;
-        foreach (Card c in cards)
-        {
-            c.transform.eulerAngles = new Vector3(-90, Random.Range(-5, 5), 0);
-            c.transform.position = stock.transform.position + Vector3.up * cardYPosition;
-            cardYPosition += 0.01f;
-        }
-        //Distribute cards in piles
         for (int i = 0; i < 7; i++)
         {
             for (int j = i; j < 7; j++)
@@ -128,6 +143,8 @@ public class GameManager : MonoBehaviour
         }
         cards.Reverse();
         stock.cardList.AddRange(cards);
+        stock.stockCount = cards.Count;
+        stock.RefreshStockPositions();
     }
 
     public void RegisterMove(string move, int score)
@@ -138,12 +155,21 @@ public class GameManager : MonoBehaviour
         print(move);
         moveHistory.Add(move);
         uiManager.UpdateScore(playerScore, moveHistory.Count);
+        CheckIfAllCardsShown();
     }
 
     public void Undo()
     {
         if (moveHistory.Count == 0) return;
-        string[] move = moveHistory[moveHistory.Count - 1].Split(' ');
+        UndoMove(moveHistory[moveHistory.Count - 1]);
+        moveHistory.RemoveAt(moveHistory.Count - 1);
+        uiManager.UpdateScore(playerScore, moveHistory.Count);
+    }
+
+    void UndoMove(string moveString)
+    {
+        print("undo : " + moveString);
+        string[] move = moveString.Split(' ');
         int lastScore = 0;
         if (move[0] == "SM")
         {
@@ -161,8 +187,6 @@ public class GameManager : MonoBehaviour
             lastScore = int.Parse(move[4]);
         }
         playerScore = lastScore;
-        moveHistory.RemoveAt(moveHistory.Count - 1);
-        uiManager.UpdateScore(playerScore, moveHistory.Count);
     }
 
     public void CardAddedToFoundation(bool added = true)
@@ -176,6 +200,8 @@ public class GameManager : MonoBehaviour
         playing = false;
         playerWonPS.Play(true);
         uiManager.PlayerWon();
+        PlayerPrefs.DeleteKey("Cards");
+        uiManager.ShowContinueButton(false);
     }
 
     public void StopWinningParticles()
@@ -232,6 +258,79 @@ public class GameManager : MonoBehaviour
                     break;
             }
         }
-        
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveGameData();
+    }
+
+    void SaveGameData()
+    {
+        if (PlayerPrefs.HasKey("Cards"))
+        {
+            string moves = "";
+            foreach (string move in moveHistory) moves += move + "/";
+            print(moves);
+            PlayerPrefs.SetString("Moves", moves);
+            PlayerPrefs.SetInt("Score", playerScore);
+        } 
+        PlayerPrefs.Save();
+    }
+
+    void CheckGameData()
+    {
+        if (PlayerPrefs.HasKey("Cards"))
+        {
+            GenerateCards(PlayerPrefs.GetString("Cards"));
+            ResetGame();
+            playerScore = PlayerPrefs.GetInt("Score");
+            stock.TurnThreeMode = (PlayerPrefs.GetInt("Draw3") == 1);
+            print(PlayerPrefs.GetString("Moves"));
+            string[] moves = PlayerPrefs.GetString("Moves").Split('/');
+            foreach (string move in moves)
+            {
+                if (move == "") continue;
+                moveHistory.Add(move);
+                RepeatMove(move);
+            }
+            uiManager.ShowContinueButton(true);
+            uiManager.UpdateScore(playerScore, moveHistory.Count);
+        }
+    }
+
+    void RepeatMove(string moveString)
+    {
+        print(moveString);
+        string[] move = moveString.Split(' ');
+        if (move[0] == "SM")
+        {
+            stock.ClickStock(false);
+        }
+        else if (move[0] == "S")
+        {
+            stock.GetCurrentCard().MoveFromStock(piles[int.Parse(move[1])]);
+        }
+        else
+        {
+            piles[int.Parse(move[0])].Undo(piles[int.Parse(move[1])], int.Parse(move[2]), false);
+        }
+    }
+
+    void CheckIfAllCardsShown()
+    {
+        if (stock.stockCount != 0) return;
+        foreach (Card card in cardReferences) if (!card.cardFacingUp) return;
+        AutoFinishTheGame();
+    }
+
+    void AutoFinishTheGame()
+    {
+        Card card;
+        Pile pile;
+        if (!help.FindMove(out card, out pile)) return;
+        card.currentPile.MoveCardToPile(card, pile);
+        card.MoveToPosition(card.transform.position); //to stop the card from moving
+        card.transform.DOMove(pile.GetNewCardPosition(), 0.1f).OnComplete(() => AutoFinishTheGame()).SetEase(Ease.OutBack);
     }
 }
